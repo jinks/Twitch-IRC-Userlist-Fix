@@ -1,5 +1,5 @@
 import json
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import hexchat
 import threading
 
@@ -65,8 +65,8 @@ def retrieve_userlist_update_callback(userdata):
 
 def retrieve_userlist_update_thread(url, channel_key):
     try:
-        response = urllib2.urlopen(url)
-    except urllib2.URLError:
+        response = urllib.request.urlopen(url)
+    except urllib.error.URLError:
         return
 
     userlist = json.load(response)['chatters']
@@ -96,10 +96,10 @@ def update_userlist(channel):
 
     if not channel_key in userlists:
         chatters = update['viewers'] + update['moderators'] + update['staff'] + update['admins']
-        map(lambda nickname: join(channel.channel, nickname, context=channel.context), chatters)
-        map(lambda nickname: mode('jtv', channel.channel, '+o', nickname, channel.context), update['moderators'])
-        map(lambda nickname: mode('jtv', channel.channel, '+q', nickname, channel.context), update['staff'])
-        map(lambda nickname: mode('jtv', channel.channel, '+a', nickname, channel.context), update['admins'])
+        [join(channel.channel, nickname, context=channel.context) for nickname in chatters]
+        [mode('jtv', channel.channel, '+o', nickname, channel.context) for nickname in update['moderators']]
+        [mode('jtv', channel.channel, '+q', nickname, channel.context) for nickname in update['staff']]
+        [mode('jtv', channel.channel, '+a', nickname, channel.context) for nickname in update['admins']]
         userlists[channel_key] = update
         return
 
@@ -109,16 +109,16 @@ def update_userlist(channel):
     joined_admins = set(update['admins']) - set(userlist['admins'])
     joined_viewers = set(update['viewers']) - set(userlist['viewers'])
     joined = joined_moderators.union(joined_staff.union(joined_admins.union(joined_viewers)))
-    map(lambda nickname: join(channel.channel, nickname, context=channel.context), joined)
+    [join(channel.channel, nickname, context=channel.context) for nickname in joined]
 
     chatters = set(userlist['viewers'] + userlist['moderators'] + userlist['staff'] + userlist['admins'])
     new_chatters = set(update['viewers'] + update['moderators'] + update['staff'] + update['admins'])
     parted = chatters - new_chatters
-    map(lambda nickname: part(nickname, channel.channel, channel.context), parted)
+    [part(nickname, channel.channel, channel.context) for nickname in parted]
 
-    map(lambda nickname: mode('jtv', channel.channel, '+o', nickname, channel.context), joined_moderators)
-    map(lambda nickname: mode('jtv', channel.channel, '+q', nickname, channel.context), joined_staff)
-    map(lambda nickname: mode('jtv', channel.channel, '+a', nickname, channel.context), joined_admins)
+    [mode('jtv', channel.channel, '+o', nickname, channel.context) for nickname in joined_moderators]
+    [mode('jtv', channel.channel, '+q', nickname, channel.context) for nickname in joined_staff]
+    [mode('jtv', channel.channel, '+a', nickname, channel.context) for nickname in joined_admins]
 
     userlists[channel_key] = update
     return
@@ -137,7 +137,7 @@ def privmsg_callback(word, word_eol, userdata):
 
 
 def unload_callback(hooks):
-    map(hexchat.unhook, hooks)
+    list(map(hexchat.unhook, hooks))
 
 
 def end_of_names_callback(word, word_eol, userdata):
@@ -174,4 +174,4 @@ if __name__ == '__main__':
     ]
 
     hexchat.hook_unload(unload_callback, hooks)
-    print __module_name__, __module_version__, 'loaded successfully.'
+    print(__module_name__, __module_version__, 'loaded successfully.')
